@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Staff {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  role        Role
+  skills      String[] // JSON array of skills
+  wageRate    Float    // per hour
+  maxHours    Int      @default(40) // maximum hours per week
+  availability String  // JSON object with weekly availability
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  shifts      Shift[]
+  performance PerformanceMetric[]
+
+  @@map("staff")
+}
+
+model Shift {
+  id          String    @id @default(cuid())
+  staffId     String
+  date        DateTime
+  startTime   DateTime
+  endTime     DateTime
+  role        Role
+  status      ShiftStatus @default(SCHEDULED)
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  staff       Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@map("shifts")
+}
+
+model PerformanceMetric {
+  id              String   @id @default(cuid())
+  staffId         String
+  date            DateTime
+  hoursWorked     Float
+  tasksCompleted  Int      @default(0)
+  attendanceRate  Float    @default(1.0) // 0.0 to 1.0
+  qualityScore    Float?   // Optional quality rating 0-10
+  createdAt       DateTime @default(now())
+
+  // Relations
+  staff           Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@map("performance_metrics")
+}
+
+model Schedule {
+  id          String   @id @default(cuid())
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("schedules")
+}
+
+enum Role {
+  MANAGER
+  WAITER
+  BARTENDER
+  COOK
+  HOST
+  CLEANER
+}
+
+enum ShiftStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
